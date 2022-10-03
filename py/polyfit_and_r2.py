@@ -1,11 +1,12 @@
 from fileinput import filename
 from tabnanny import filename_only
 import PySimpleGUI as sg
-import numpy as np
+import numpy as np 
 import openpyxl
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import pandas as pd
+import sympy
 
 
 
@@ -100,7 +101,7 @@ sg.theme("GreenMono")
 frame1 = sg.Frame('',
     [
         [
-            sg.Text('処理を実行したファイルを選択してくださいエクセルファイルを選択してくださファイルを選択してください')
+            sg.Text('処理を実行したいファイルを選択してください')
         ],
         [
             sg.Text("ファイル"),

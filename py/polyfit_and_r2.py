@@ -3,11 +3,10 @@ from msilib.schema import CheckBox
 from tabnanny import filename_only
 import PySimpleGUI as sg
 import numpy as np 
-import openpyxl
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import pandas as pd
-import sympy
+import pyperclip
 
 
 ds=[]
@@ -25,8 +24,6 @@ txt3="処理を実行しています"
 
 fig = plt.figure(figsize=(5, 4))
 ax = fig.add_subplot(111)
-
-checkbox_v=0
 
 
 def make_data_fig_selected(fig):
@@ -49,13 +46,35 @@ def make_data_fig(fig,make = True):
         ys = list(df["y"])
         polyfit_lst = []
         for i in range(1,11):
-            polyfit_lst.append(np.polyfit(xs,ys,i))
-        print(polyfit_lst)
+            polyfit_lst.append(list(np.polyfit(xs,ys,i)))
 
-
+        xl_poly_lst=[]
+        output_poly_lst=[]
+        for polyfit in polyfit_lst:
+            a = len(polyfit)-1
+            xl_poly = ""
+            output_poly = ""
+            for c in polyfit:
+                if c < 0:
+                    if xl_poly != "":
+                        xl_poly = xl_poly[:-1]
+                        output_poly = output_poly[:-1]
+                xl_poly += str(c)
+                output_poly += str(round(c,4))
+                if a == 0:
+                    xl_poly_lst.append(xl_poly)
+                    output_poly_lst.append(output_poly)
+                    print(xl_poly)
+                    print(output_poly)
+                elif a == 1:
+                    xl_poly += "x+"
+                    output_poly += "x+"
+                else:
+                    xl_poly += "x^"+str(a)+"+"
+                    output_poly += "x^"+str(a)+"+"
+                a -= 1
 
         ax.scatter(xs, ys,label="observed")
-
         x_latent = np.linspace(min(xs), max(xs), 100)
 
 
@@ -63,6 +82,7 @@ def make_data_fig(fig,make = True):
             if values[d[0]]:
                 fitted_curve = np.poly1d((lambda x, y: np.polyfit(x, y, d[1]))(xs, ys))(x_latent)
                 ax.plot(x_latent, fitted_curve, label=d[2])
+                window[d[3]].Update(output_poly_lst[d[1]])
 
 
 
@@ -87,10 +107,11 @@ def draw_figure(canvas, figure):
     figure_canvas.get_tk_widget().pack(side='top', fill='both', expand=1)
     return figure_canvas
 
-def selected_checbox():
-    window[ds[checkbox_v][0]].Update(txt2)
+def selected_checkbox(checkbox_v):
+    window[ds[checkbox_v][3]].Update(txt2)
     if values["-filename-"] != "":
         window[ds[checkbox_v][3]].Update(txt3)
+        fig = plt.figure(figsize=(5, 4))
         fig = make_data_fig(fig, make=False)
         fig = make_data_fig(fig, make=True)
         fig_agg.draw()
@@ -120,7 +141,7 @@ frame1 = sg.Frame('',
 col = [[sg.Text('チェックを入れると近似式とグラフを表示する')]]
         # Create several similar fire buttons in the vertical column
 for d in ds:
-    col += [[sg.Checkbox(d[2], enable_events=True, key=d[0]),sg.InputText("ここに数式が出ます",readonly=True,key=d[3])]]
+    col += [[sg.Checkbox(d[2], enable_events=True, key=d[0]),sg.InputText("ここに数式が出ます",readonly=True,key=d[3],size=(80,1))]]
 
 frame2 = sg.Frame('',
     [    
@@ -131,7 +152,7 @@ frame2 = sg.Frame('',
         [
             sg.Button("記入",size=(25,1)),sg.Button("終了",size=(25,1))
         ],
-    ] , size=(520, 630)
+    ] , size=(900, 630)
 )
 
 layout = [
@@ -161,7 +182,6 @@ while True:
         fig = make_data_fig_selected(fig)
         fig_agg.draw()
 
-
     elif event == '-display-':
         fig = make_data_fig(fig, make=True)
         fig_agg.draw()
@@ -172,85 +192,23 @@ while True:
 
     
     elif event == '-d1-':
-        window["-f1-"].Update("ファイルを選択してください")
-        if values["-filename-"] != "":
-            window["-f1-"].Update("処理を実行しています")
-            fig = make_data_fig(fig, make=False)
-            fig = make_data_fig(fig, make=True)
-            fig_agg.draw()
-        if values['-d1-'] == False:
-            window["-f1-"].Update(txt1) 
+        selected_checkbox(0)
     elif event == '-d2-':
-        window["-f2-"].Update("ファイルを選択してください")
-        if values["-filename-"] != "":
-            window["-f2-"].Update("処理を実行しています")
-            fig = make_data_fig(fig, make=False)
-            fig = make_data_fig(fig, make=True)
-            fig_agg.draw()
-        if values['-d2-'] == False:
-            window["-f2-"].Update(txt1) 
+        selected_checkbox(1)
     elif event == '-d3-':
-        window["-f3-"].Update("ファイルを選択してください")
-        if values["-filename-"] != "":
-            window["-f3-"].Update("処理を実行しています")
-            fig = make_data_fig(fig, make=False)
-            fig = make_data_fig(fig, make=True)
-            fig_agg.draw()
-        if values['-d3-'] == False:
-            window["-f3-"].Update(txt1) 
+        selected_checkbox(2)
     elif event == '-d4-':
-        window["-f4-"].Update("ファイルを選択してください")
-        if values["-filename-"] != "":
-            window["-f4-"].Update("処理を実行しています")
-            fig = make_data_fig(fig, make=False)
-            fig = make_data_fig(fig, make=True)
-            fig_agg.draw()
-        if values['-d4-'] == False:
-            window["-f4-"].Update(txt1) 
+        selected_checkbox(3)
     elif event == '-d5-':
-        window["-f5-"].Update("ファイルを選択してください")
-        if values["-filename-"] != "":
-            window["-f5-"].Update("処理を実行しています")
-            fig = make_data_fig(fig, make=False)
-            fig = make_data_fig(fig, make=True)
-            fig_agg.draw()
-        if values['-d5-'] == False:
-            window["-f5-"].Update(txt1) 
+        selected_checkbox(4)
     elif event == '-d6-':
-        window["-f6-"].Update("ファイルを選択してください")
-        if values["-filename-"] != "":
-            window["-f6-"].Update("処理を実行しています")
-            fig = make_data_fig(fig, make=False)
-            fig = make_data_fig(fig, make=True)
-            fig_agg.draw() 
-        if values['-d6-'] == False: 
-            window["-f6-"].Update(txt1)
+        selected_checkbox(5)
     elif event == '-d7-':
-        window["-f7-"].Update("ファイルを選択してください")
-        if values["-filename-"] != "":
-            window["-f7-"].Update("処理を実行しています")
-            fig = make_data_fig(fig, make=False)
-            fig = make_data_fig(fig, make=True)
-            fig_agg.draw() 
-        if values['-d7-'] == False: 
-            window["-f7-"].Update(txt1)
+        selected_checkbox(6)
     elif event == '-d8-':
-        window["-f8-"].Update("ファイルを選択してください")
-        if values["-filename-"] != "":
-            window["-f8-"].Update("処理を実行しています")
-            fig = make_data_fig(fig, make=False)
-            fig = make_data_fig(fig, make=True)
-            fig_agg.draw() 
-        if values['-d8-'] == False: 
-            window["-f8-"].Update(txt1)
+        selected_checkbox(7)
     elif event == '-d9-':
-        window["-f9-"].Update("ファイルを選択してください")
-        if values["-filename-"] != "":
-            window["-f9-"].Update("処理を実行しています")
-            fig = make_data_fig(fig, make=False)
-            fig = make_data_fig(fig, make=True)
-            fig_agg.draw() 
-        if values['-d9-'] == False: 
-            window["-f9-"].Update(txt1)            
+        selected_checkbox(8)
+         
 
 window.close()

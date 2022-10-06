@@ -143,6 +143,39 @@ def selected_checkbox(checkbox_v):
 def copy_clip(i):
     pyperclip.copy(values[ds[i][3]])
 
+def write_excel():
+    filename = values["-filename-"]
+    if filename != "":
+        df = pd.read_excel(filename,sheet_name=0)
+        xs = list(df["x"])
+        ys = list(df["y"])
+        polyfit_lst = []
+        for i in range(1,10):
+            polyfit_lst.append(list(np.polyfit(xs,ys,i)))
+
+        xl_poly_lst=[]
+        for polyfit in polyfit_lst:
+            a = len(polyfit)-1
+            xl_poly = ""
+            for c in polyfit:
+                m = 0
+                if c < 0:
+                    m = 1
+                    if xl_poly != "":
+                        xl_poly = xl_poly[:-1]
+                xl_poly += str(c)
+                cs = []
+                r = 2
+                if a == 0:
+                    xl_poly_lst.append(xl_poly)
+                    print(xl_poly)
+                elif a == 1:
+                    xl_poly += "x+"
+                else:
+                    xl_poly += "x^"+str(a)+"+"
+                a -= 1
+    
+
 
 
 sg.theme("GreenMono")
@@ -175,7 +208,7 @@ frame2 = sg.Frame('',
             sg.Text("結果をエクセルに記入する")
         ],
         [
-            sg.Button("記入",size=(25,1)),sg.Button("終了",size=(25,1))
+            sg.Button("記入",size=(25,1),key="write_xl"),sg.Button("終了",size=(25,1))
         ],
     ] , size=(1000, 630)
 )
@@ -214,6 +247,9 @@ while True:
     elif event == '-clear-':
         fig = make_data_fig(fig, make=False)
         fig_agg.draw()
+
+    elif event == "write_xl":
+        write_excel()
 
     
     elif event == '-d1-':

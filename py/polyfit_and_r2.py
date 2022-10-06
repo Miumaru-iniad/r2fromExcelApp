@@ -1,6 +1,3 @@
-from fileinput import filename
-from msilib.schema import CheckBox
-from tabnanny import filename_only
 import PySimpleGUI as sg
 import numpy as np 
 import matplotlib.pyplot as plt
@@ -160,11 +157,13 @@ def write_excel():
                 else:
                     xl_poly += "x^"+str(a)+"+"
                 a -= 1
-        df = pd.DataFrame(x_latent,columns=["x"])        
+        df = pd.DataFrame(x_latent,columns=["x"])    
+        df.loc["formula"]=["formula"]    
         for d in ds:
             if values[d[0]]:
                 fitted_curve = np.poly1d((lambda x, y: np.polyfit(x, y, d[1]))(xs, ys))(x_latent)
-                df2 = pd.DataFrame(fitted_curve,columns=[xl_poly_lst[d[1]-1]])
+                df2 = pd.DataFrame(fitted_curve,columns=[d[2]])
+                df2.loc["formula"]=[xl_poly_lst[d[1]-1]]
                 df = pd.concat([df, df2], axis=1)
             
         

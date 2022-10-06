@@ -11,7 +11,7 @@ import pyperclip
 
 ds=[]
 for i in range(1,10):
-    ds.append(["-d"+str(i)+"-",i,"D="+str(i),"-f"+str(i)+"-"])
+    ds.append(["-d"+str(i)+"-",i,"D="+str(i),"-f"+str(i)+"-","-cp"+str(i)+"-"])
 d_values = []
 for d in ds:
     d_values.append(d[0])
@@ -45,7 +45,7 @@ def make_data_fig(fig,make = True):
         xs = list(df["x"])
         ys = list(df["y"])
         polyfit_lst = []
-        for i in range(1,11):
+        for i in range(1,10):
             polyfit_lst.append(list(np.polyfit(xs,ys,i)))
 
         xl_poly_lst=[]
@@ -55,12 +55,34 @@ def make_data_fig(fig,make = True):
             xl_poly = ""
             output_poly = ""
             for c in polyfit:
+                m = 0
                 if c < 0:
+                    m = 1
                     if xl_poly != "":
                         xl_poly = xl_poly[:-1]
                         output_poly = output_poly[:-1]
                 xl_poly += str(c)
-                output_poly += str(round(c,4))
+                cs = []
+                r = 2
+                if "e" in str(c):
+                    k = str(c).find("e")
+                    print("k=",k)
+                    
+                    output_poly += str(c)[:4+m] + str(c)[k:]
+                else:
+                    for n in str(c):
+                        if n !="." and n != "-" :
+                            cs.append(n)
+                    for n in cs:
+                        if n == '0':
+                            r += 1
+                            print(r)
+                        else:
+                            break
+                    print(cs)
+                    output_poly += str(round(c,r))
+                    print("r=",r)
+                    r = 2
                 if a == 0:
                     xl_poly_lst.append(xl_poly)
                     output_poly_lst.append(output_poly)
@@ -82,7 +104,7 @@ def make_data_fig(fig,make = True):
             if values[d[0]]:
                 fitted_curve = np.poly1d((lambda x, y: np.polyfit(x, y, d[1]))(xs, ys))(x_latent)
                 ax.plot(x_latent, fitted_curve, label=d[2])
-                window[d[3]].Update(output_poly_lst[d[1]])
+                window[d[3]].Update(output_poly_lst[d[1]-1])
 
 
 
@@ -118,6 +140,9 @@ def selected_checkbox(checkbox_v):
         if values[ds[checkbox_v][0]] == False:
             window[ds[checkbox_v][3]].Update(txt1) 
 
+def copy_clip(i):
+    pyperclip.copy(values[ds[i][3]])
+
 
 
 sg.theme("GreenMono")
@@ -141,7 +166,7 @@ frame1 = sg.Frame('',
 col = [[sg.Text('チェックを入れると近似式とグラフを表示する')]]
         # Create several similar fire buttons in the vertical column
 for d in ds:
-    col += [[sg.Checkbox(d[2], enable_events=True, key=d[0]),sg.InputText("ここに数式が出ます",readonly=True,key=d[3],size=(80,1))]]
+    col += [[sg.Checkbox(d[2], enable_events=True, key=d[0]),sg.InputText("ここに数式が出ます",readonly=True,key=d[3],size=(80,1)),sg.Button("copy",key=d[4])]]
 
 frame2 = sg.Frame('',
     [    
@@ -152,7 +177,7 @@ frame2 = sg.Frame('',
         [
             sg.Button("記入",size=(25,1)),sg.Button("終了",size=(25,1))
         ],
-    ] , size=(900, 630)
+    ] , size=(1000, 630)
 )
 
 layout = [
@@ -209,6 +234,26 @@ while True:
         selected_checkbox(7)
     elif event == '-d9-':
         selected_checkbox(8)
+
+    elif event == '-cp1-':
+        copy_clip(0)
+    elif event == '-cp2-':
+        copy_clip(1)
+    elif event == '-cp3-':
+        copy_clip(2)
+    elif event == '-cp4-':
+        copy_clip(3)
+    elif event == '-cp5-':
+        copy_clip(4)
+    elif event == '-cp6-':
+        copy_clip(5)
+    elif event == '-cp7-':
+        copy_clip(6)
+    elif event == '-cp8-':
+        copy_clip(7)
+    elif event == '-cp9-':
+        copy_clip(8)
+
          
 
 window.close()

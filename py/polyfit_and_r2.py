@@ -48,26 +48,20 @@ def make_data_fig(fig,make = True):
         for i in range(1,10):
             polyfit_lst.append(list(np.polyfit(xs,ys,i)))
 
-        xl_poly_lst=[]
         output_poly_lst=[]
         for polyfit in polyfit_lst:
             a = len(polyfit)-1
-            xl_poly = ""
             output_poly = ""
             for c in polyfit:
                 m = 0
                 if c < 0:
                     m = 1
-                    if xl_poly != "":
-                        xl_poly = xl_poly[:-1]
+                    if output_poly!= "":
                         output_poly = output_poly[:-1]
-                xl_poly += str(c)
                 cs = []
                 r = 2
                 if "e" in str(c):
                     k = str(c).find("e")
-                    print("k=",k)
-                    
                     output_poly += str(c)[:4+m] + str(c)[k:]
                 else:
                     for n in str(c):
@@ -76,23 +70,15 @@ def make_data_fig(fig,make = True):
                     for n in cs:
                         if n == '0':
                             r += 1
-                            print(r)
                         else:
                             break
-                    print(cs)
                     output_poly += str(round(c,r))
-                    print("r=",r)
                     r = 2
                 if a == 0:
-                    xl_poly_lst.append(xl_poly)
                     output_poly_lst.append(output_poly)
-                    print(xl_poly)
-                    print(output_poly)
                 elif a == 1:
-                    xl_poly += "x+"
                     output_poly += "x+"
                 else:
-                    xl_poly += "x^"+str(a)+"+"
                     output_poly += "x^"+str(a)+"+"
                 a -= 1
 
@@ -145,6 +131,7 @@ def copy_clip(i):
 
 def write_excel():
     filename = values["-filename-"]
+    nam = "result"
     if filename != "":
         df = pd.read_excel(filename,sheet_name=0)
         xs = list(df["x"])
@@ -152,6 +139,8 @@ def write_excel():
         polyfit_lst = []
         for i in range(1,10):
             polyfit_lst.append(list(np.polyfit(xs,ys,i)))
+        x_latent = np.linspace(min(xs), max(xs), 100)
+
 
         xl_poly_lst=[]
         for polyfit in polyfit_lst:
@@ -164,16 +153,26 @@ def write_excel():
                     if xl_poly != "":
                         xl_poly = xl_poly[:-1]
                 xl_poly += str(c)
-                cs = []
-                r = 2
                 if a == 0:
                     xl_poly_lst.append(xl_poly)
-                    print(xl_poly)
                 elif a == 1:
                     xl_poly += "x+"
                 else:
                     xl_poly += "x^"+str(a)+"+"
                 a -= 1
+        df = pd.DataFrame(x_latent,columns=["x"])        
+        for d in ds:
+            if values[d[0]]:
+                fitted_curve = np.poly1d((lambda x, y: np.polyfit(x, y, d[1]))(xs, ys))(x_latent)
+                df2 = pd.DataFrame(fitted_curve,columns=[xl_poly_lst[d[1]-1]])
+                df = pd.concat([df, df2], axis=1)
+            
+        
+        print(df)
+        with pd.ExcelWriter(filename,engine='openpyxl', mode='a',if_sheet_exists='new') as writer:
+            df.to_excel(writer, sheet_name=nam,index=False)
+
+
     
 
 

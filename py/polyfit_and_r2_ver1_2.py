@@ -9,7 +9,7 @@ from sklearn.metrics import r2_score
 
 ds=[]
 for i in range(1,10):
-    ds.append(["-d"+str(i)+"-",i,"D="+str(i),"-f"+str(i)+"-","-cp"+str(i)+"-","-r2"+str(i)+"-"])
+    ds.append(["-d"+str(i)+"-",i,"D="+str(i),"-f"+str(i)+"-","-cp"+str(i)+"-","-r2"+str(i)+"-","-adr2"+str(i)+"-"])
 d_values = []
 for d in ds:
     d_values.append(d[0])
@@ -41,6 +41,7 @@ def make_data_fig(fig,make = True):
         filename = values["-filename-"]
         df = pd.read_excel(filename,sheet_name=0)
         xs = list(df["x"])
+        datanum = len(xs)
         ys = list(df["y"])
         polyfit_lst = []
         for i in range(1,10):
@@ -92,8 +93,14 @@ def make_data_fig(fig,make = True):
                 p = np.polyfit(xs,ys,d[1])
                 yfit = np.polyval(p, xs)
                 r2_1 = r2_score(ys,yfit)
+                if datanum-d[1]-1 == 0:
+                    adr2 = 1 
+                else:
+                    adr2 = 1-(((datanum-1)/(datanum-d[1]-1))*(1-r2_1))
                 r2_1 = round(r2_1, 4)
+                adr2 = round(adr2,4)
                 window[d[5]].Update(r2_1)
+                window[d[6]].Update(adr2)
 
 
 
@@ -112,6 +119,7 @@ def selected_file():
         window[d[0]].Update(value=False)
         window[d[3]].Update(txt1)
         window[d[5]].Update("r2=")
+        window[d[6]].Update("adjustedr2=")
 
 def draw_figure(canvas, figure):
     figure_canvas = FigureCanvasTkAgg(figure, canvas)
@@ -129,9 +137,11 @@ def selected_checkbox(checkbox_v):
         fig_agg.draw()
         if values[ds[checkbox_v][0]] == False:
             window[ds[checkbox_v][3]].Update(txt1) 
+            window[ds[checkbox_v][5]].Update("r2=")
+            window[ds[checkbox_v][6]].Update("adjustedr2=")
 
 def copy_clip(i):
-    pyperclip.copy(values[ds[i][3]])
+    pyperclip.copy(values[ds[i][3]]+"r2="+values[ds[i][5]]+"adujtedr2="+values[ds[i][6]])
 
 def write_excel():
     filename = values["-filename-"]
@@ -140,6 +150,7 @@ def write_excel():
         df = pd.read_excel(filename,sheet_name=0)
         xs = list(df["x"])
         ys = list(df["y"])
+        datanum=len(xs)
         polyfit_lst = []
         for i in range(1,10):
             polyfit_lst.append(list(np.polyfit(xs,ys,i)))
@@ -166,17 +177,41 @@ def write_excel():
                 a -= 1
         df = pd.DataFrame(x_latent,columns=["x"])    
         df.loc["formula"]=["formula"]
-        df.loc["r2"]=["r2"]    
+        index_lst=[]
+        for e in range(0,8):
+            index_lst.append("x^"+str(9-e))
+        index_lst.append("x")
+        index_lst.append("c")
+        for index in index_lst:
+            df.loc[index]=[index]
+        df.loc["r2"]=["r2"]  
+        df.loc["adjustedr2"]= ["adjustedr2"]
         for d in ds:
             if values[d[0]]:
                 fitted_curve = np.poly1d((lambda x, y: np.polyfit(x, y, d[1]))(xs, ys))(x_latent)
                 df2 = pd.DataFrame(fitted_curve,columns=[d[2]])
                 df2.loc["formula"]=[xl_poly_lst[d[1]-1]]
+                length = len(polyfit_lst[d[1]-1])
+                ind = 10
+                for index in index_lst:
+                    if length - ind<0:
+                         df2.loc[index]=[0]
+                    else:
+                        df2.loc[index]=[polyfit_lst[d[1]-1][length - ind]]
+
+                    ind -= 1
                 p = np.polyfit(xs,ys,d[1])
                 yfit = np.polyval(p, xs)
                 r2_1 = r2_score(ys,yfit)
+                if datanum-d[1]-1 == 0:
+                    adr2 = 1 
+                else:
+                    adr2 = 1-(((datanum-1)/(datanum-d[1]-1))*(1-r2_1))
                 r2_1 = round(r2_1, 4)
+                adr2 = round(adr2,4)
                 df2.loc["r2"]=[r2_1]
+                df2.loc["adjustedr2"]=[adr2]
+
                 
                 df = pd.concat([df, df2], axis=1)
 
@@ -207,13 +242,13 @@ frame1 = sg.Frame('',
         [
             sg.Text("相関係数"),sg.InputText("相関係数",readonly=True,key="-r2-")
         ],
-    ], size=(700, 630)
+    ], size=(670, 630)
 )
   
 col = [[sg.Text('チェックを入れると近似式とグラフを表示する')]]
         # Create several similar fire buttons in the vertical column
 for d in ds:
-    col += [[sg.Checkbox(d[2], enable_events=True, key=d[0]),sg.InputText("ここに数式が出ます",readonly=True,key=d[3],size=(80,1)),sg.InputText("r2=",readonly=True,key=d[5],size=(10,1)),sg.Button("copy",key=d[4])]]
+    col += [[sg.Checkbox(d[2], enable_events=True, key=d[0]),sg.InputText("ここに数式が出ます",readonly=True,key=d[3],size=(80,1)),sg.InputText("r2=",readonly=True,key=d[5],size=(10,1)),sg.InputText("adjustedr2=",readonly=True,key=d[6],size=(10,1)),sg.Button("copy",key=d[4])]]
 
 frame2 = sg.Frame('',
     [    
@@ -224,7 +259,7 @@ frame2 = sg.Frame('',
         [
             sg.Button("記入",size=(25,1),key="write_xl"),sg.Button("終了",size=(25,1))
         ],
-    ] , size=(1000, 630)
+    ] , size=(1100, 630)
 )
 
 layout = [
